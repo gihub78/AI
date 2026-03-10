@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+
+<!-- AI 对话容器 -->
+<div id="ai-chat-box" style="position:fixed; bottom:20px; right:20px; width:300px; border:1px solid #ccc; background:#fff; padding:10px; border-radius:10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <div id="chat-content" style="height:200px; overflow-y:auto; margin-bottom:10px; font-size:14px;"></div>
+    <input type="text" id="user-input" placeholder="问问 AI..." style="width:75%; border:1px solid #ddd; padding:5px;">
+    <button onclick="sendMessage()" style="width:20%; cursor:pointer;">发送</button>
+</div>
+
+<script>
+    async function sendMessage() {
+        const input = document.getElementById('user-input');
+        const content = document.getElementById('chat-content');
+        const message = input.value;
+        if (!message) return;
+
+        // 显示用户消息
+        content.innerHTML += `<div><b>你:</b> ${message}</div>`;
+        input.value = '';
+
+        try {
+            // 调用 OpenClaw Gateway 接口 (替换为你的服务器公网 IP/域名)
+            const response = await fetch('http://你的服务器IP:8000/api/v1/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    message: message,
+                    user_id: "web_user_01" 
+                })
+            });
+            const data = await response.json();
+            
+            // 显示 AI 回复
+            content.innerHTML += `<div><b>AI:</b> ${data.reply}</div>`;
+            content.scrollTop = content.scrollHeight;
+        } catch (error) {
+            content.innerHTML += `<div style="color:red;">连接 AI 失败，请检查后端。</div>`;
+        }
+    }
+</script>
