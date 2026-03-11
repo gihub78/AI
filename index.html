@@ -27,7 +27,7 @@
 
 <script>
     // 假设你的 OpenClaw 运行在本地 8000 端
-    const socket = new WebSocket('http://127.0.0.1:18789/');
+    const socket = new WebSocket('http://:18789/');
 
     socket.onmessage = function(event) {
         const data = JSON.parse(event.data);
