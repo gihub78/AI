@@ -1,40 +1,60 @@
 <!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的小龙虾 AI 助手</title>
+    <style>
+        /* 简单的聊天框样式 */
+        #claw-container { position: fixed; bottom: 20px; right: 20px; width: 300px; border: 1px solid #ccc; border-radius: 10px; background: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.1); font-family: sans-serif; }
+        #claw-header { background: #ff4757; color: white; padding: 10px; border-radius: 10px 10px 0 0; text-align: center; }
+        #claw-messages { height: 300px; overflow-y: auto; padding: 10px; font-size: 14px; }
+        #claw-input-area { display: flex; border-top: 1px solid #eee; }
+        #claw-input { flex: 1; border: none; padding: 10px; outline: none; }
+        #claw-send { border: none; background: #ff4757; color: white; padding: 0 15px; cursor: pointer; }
+    </style>
+</head>
+<body>
 
-<!-- AI 对话容器 -->
-<div id="ai-chat-box" style="position:fixed; bottom:20px; right:20px; width:300px; border:1px solid #ccc; background:#fff; padding:10px; border-radius:10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-    <div id="chat-content" style="height:200px; overflow-y:auto; margin-bottom:10px; font-size:14px;"></div>
-    <input type="text" id="user-input" placeholder="问问 AI..." style="width:75%; border:1px solid #ddd; padding:5px;">
-    <button onclick="sendMessage()" style="width:20%; cursor:pointer;">发送</button>
+<div id="claw-container">
+    <div id="claw-header">🦞 小龙虾 AI 助手</div>
+    <div id="claw-messages"></div>
+    <div id="claw-input-area">
+        <input type="text" id="claw-input" placeholder="输入指令..." onkeypress="handleKeyPress(event)">
+        <button id="claw-send" onclick="sendMessage()">发送</button>
+    </div>
 </div>
 
 <script>
-    async function sendMessage() {
-        const input = document.getElementById('user-input');
-        const content = document.getElementById('chat-content');
-        const message = input.value;
-        if (!message) return;
+    // 假设你的 OpenClaw 运行在本地 8000 端
+    const socket = new WebSocket('ws://127.0.0.1:18789/');
 
-        // 显示用户消息
-        content.innerHTML += `<div><b>你:</b> ${message}</div>`;
-        input.value = '';
+    socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        appendMessage('AI', data.text);
+    };
 
-        try {
-            // 调用 OpenClaw Gateway 接口 (替换为你的服务器公网 IP/域名)
-            const response = await fetch('http://你的服务器IP:8000/api/v1/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    message: message,
-                    user_id: "web_user_01" 
-                })
-            });
-            const data = await response.json();
-            
-            // 显示 AI 回复
-            content.innerHTML += `<div><b>AI:</b> ${data.reply}</div>`;
-            content.scrollTop = content.scrollHeight;
-        } catch (error) {
-            content.innerHTML += `<div style="color:red;">连接 AI 失败，请检查后端。</div>`;
+    function sendMessage() {
+        const input = document.getElementById('claw-input');
+        const text = input.value.trim();
+        if (text) {
+            appendMessage('你', text);
+            socket.send(JSON.stringify({ message: text }));
+            input.value = '';
         }
     }
+
+    function appendMessage(sender, text) {
+        const box = document.getElementById('claw-messages');
+        const msg = document.createElement('div');
+        msg.innerHTML = `<strong>${sender}:</strong> ${text}`;
+        box.appendChild(msg);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function handleKeyPress(e) {
+        if (e.key === 'Enter') sendMessage();
+    }
 </script>
+</body>
+</html>
