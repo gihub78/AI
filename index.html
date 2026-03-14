@@ -2,59 +2,60 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的小龙虾 AI 助手</title>
+    <title>我的 GitHub AI 助手</title>
     <style>
-        /* 简单的聊天框样式 */
-        #claw-container { position: fixed; bottom: 20px; right: 20px; width: 300px; border: 1px solid #ccc; border-radius: 10px; background: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.1); font-family: sans-serif; }
-        #claw-header { background: #ff4757; color: white; padding: 10px; border-radius: 10px 10px 0 0; text-align: center; }
-        #claw-messages { height: 300px; overflow-y: auto; padding: 10px; font-size: 14px; }
-        #claw-input-area { display: flex; border-top: 1px solid #eee; }
-        #claw-input { flex: 1; border: none; padding: 10px; outline: none; }
-        #claw-send { border: none; background: #ff4757; color: white; padding: 0 15px; cursor: pointer; }
+        body { font-family: sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        #chat-box { height: 300px; border: 1px solid #ccc; overflow-y: auto; padding: 10px; margin-bottom: 10px; background: #f9f9f9; }
+        input { width: 80%; padding: 10px; }
+        button { padding: 10px; cursor: pointer; }
+        .user { color: blue; margin-bottom: 5px; }
+        .ai { color: green; margin-bottom: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
+    <h2>AI 聊天窗口</h2>
+    <div id="chat-box"></div>
+    <input type="text" id="user-input" placeholder="输入问题...">
+    <button onclick="askAI()">发送</button>
 
-<div id="claw-container">
-    <div id="claw-header">🦞 小龙虾 AI 助手</div>
-    <div id="claw-messages"></div>
-    <div id="claw-input-area">
-        <input type="text" id="claw-input" placeholder="输入指令..." onkeypress="handleKeyPress(event)">
-        <button id="claw-send" onclick="sendMessage()">发送</button>
-    </div>
-</div>
+    <script>
+        // 【关键步骤】在这里填入你的 GitHub 访问令牌
+        const GITHUB_TOKEN = "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"; 
 
-<script>
-    // 假设你的 OpenClaw 运行在本地 8000 端口
-    const socket = new WebSocket('ws://localhost:8000/ws/claw');
+        async function askAI() {
+            const inputField = document.getElementById('user-input');
+            const chatBox = document.getElementById('chat-box');
+            const question = inputField.value;
+            if (!question) return;
 
-    socket.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-        appendMessage('AI', data.text);
-    };
+            // 显示用户问题
+            chatBox.innerHTML += `<div class="user">我: ${question}</div>`;
+            inputField.value = '';
 
-    function sendMessage() {
-        const input = document.getElementById('claw-input');
-        const text = input.value.trim();
-        if (text) {
-            appendMessage('你', text);
-            socket.send(JSON.stringify({ message: text }));
-            input.value = '';
+            try {
+                const response = await fetch("https://models.inference.ai.azure.com", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${GITHUB_TOKEN}`
+                    },
+                    body: JSON.stringify({
+                        messages: [{ role: "user", content: question }],
+                        model: "gpt-4o", // 或者使用 "meta-llama-3-8b-instruct" 等
+                        max_tokens: 1000
+                    })
+                });
+
+                const data = await response.json();
+                const answer = data.choices[0].message.content;
+                
+                // 显示 AI 回答
+                chatBox.innerHTML += `<div class="ai">AI: ${answer}</div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (error) {
+                chatBox.innerHTML += `<div style="color:red">错误: ${error.message}</div>`;
+            }
         }
-    }
-
-    function appendMessage(sender, text) {
-        const box = document.getElementById('claw-messages');
-        const msg = document.createElement('div');
-        msg.innerHTML = `<strong>${sender}:</strong> ${text}`;
-        box.appendChild(msg);
-        box.scrollTop = box.scrollHeight;
-    }
-
-    function handleKeyPress(e) {
-        if (e.key === 'Enter') sendMessage();
-    }
-</script>
+    </script>
 </body>
 </html>
